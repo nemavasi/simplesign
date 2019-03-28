@@ -1,0 +1,17 @@
+
+
+
+
+#controlHeader ($action $customField.id $customField.name $fieldLayoutItem.required $displayParameters.noHeader)
+
+<input class="text" id="${customField.id}" name="${customField.id}" type="text" value="$!username" placeholder="Имя пользователя">
+
+<input class="text" id="password" type="text" name="${customField.id}:1" placeholder="Пароль">
+
+<div class="description">$sometext</div>
+
+
+<div class="error" data-field="credential" id="credential-error">$!errors.get("credential")</div>
+
+
+#controlFooter ($action $fieldLayoutItem.fieldDescription $displayParameters.noHeader)
