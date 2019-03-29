@@ -7,6 +7,7 @@ import com.atlassian.jira.issue.customfields.view.CustomFieldParams;
 import com.atlassian.jira.security.JiraAuthenticationContext;
 import com.atlassian.jira.util.ErrorCollection;
 import com.atlassian.sal.api.user.UserManager;
+import com.opensymphony.util.TextUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,10 +27,7 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.JiraImport;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 
 // смотреть тут
@@ -38,15 +36,17 @@ import java.util.Set;
 
 
 //public class SimpleSignature extends TextCFType {
-public class SimpleSignature extends AbstractCustomFieldType<Carrier, String>  {
-//public class SimpleSignature extends AbstractSingleFieldType<String> {
+//public class SimpleSignature extends AbstractCustomFieldType<Carrier, String>  {
+public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
     private static final Logger log = LoggerFactory.getLogger(SimpleSignature.class);
 
     private JiraAuthenticationContext jiraAuthenticationContext;
-    private CustomFieldManager customFieldManager;
-    private IssueManager issueManager;
-    private UserManager userManager;
+//    private CustomFieldManager customFieldManager;
+//    private IssueManager issueManager;
+//    private UserManager userManager;
     private CustomFieldValuePersister customFieldValuePersister;
+    private GenericConfigManager genericConfigManager;
+
 
     // The type of data in the database, one entry per value in this field
     private static final PersistenceFieldType DB_TYPE = PersistenceFieldType.TYPE_UNLIMITED_TEXT;
@@ -57,116 +57,156 @@ public class SimpleSignature extends AbstractCustomFieldType<Carrier, String>  {
      */
     public static final String DB_SEP = "###";
 
-
-    public SimpleSignature(@JiraImport JiraAuthenticationContext jiraAuthenticationContext,
-                           @JiraImport CustomFieldManager customFieldManager,
-                           @JiraImport IssueManager issueManager,
-                           @JiraImport UserManager userManager,
-                           @JiraImport CustomFieldValuePersister customFieldValuePersister
+    protected SimpleSignature(@JiraImport CustomFieldValuePersister customFieldValuePersister,
+                              @JiraImport GenericConfigManager genericConfigManager,
+                              @JiraImport JiraAuthenticationContext jiraAuthenticationContext
     ) {
-
+        super(customFieldValuePersister, genericConfigManager);
         this.jiraAuthenticationContext = jiraAuthenticationContext;
-        this.customFieldManager = customFieldManager;
-        this.issueManager = issueManager;
-        this.userManager = userManager;
-        this.customFieldValuePersister = customFieldValuePersister;
-
     }
 
-//    /* перевод из транспортного объекта в строку*/
-//    @Override
-//    public String getStringFromSingularObject(Carrier carrier) {
-//        return carrier.toString();
-//    }
+
+    @Override
+    public void createValue(CustomField field, Issue issue, @Nonnull Carrier value) {
+        log.warn(" ============== createValue");
+        log.warn("value: " + value);
+
+
+        super.createValue(field, issue, value);
+    }
+
+    @Override
+    public void updateValue(CustomField customField, Issue issue, Carrier value) {
+        log.warn(" ============== updateValue");
+        log.warn("value: " + value);
+
+
+        super.updateValue(customField, issue, value);
+    }
+
+
+
+
+
+    /* перевод из транспортного объекта в строку - в вид для сохранения в бд*/
+    @Override
+    public String getStringFromSingularObject(Carrier carrier) {
+        return carrier.toString();
+    }
+
+    /**
+     * Convert a database representation of a Carrier object into
+     * a Carrier object. This method is also used for bulk moves and imports.
+     */
+    /* перевод из строки в транспортный объект (из представления бд в объектный вид для работы)*/
+    @Override
+    public Carrier getSingularObjectFromString(String s) throws FieldValidationException {
+        // s = dbvalue
+        if (StringUtils.isEmpty(s)) {
+            return null;
+        }
+        String[] parts = s.split(DB_SEP);
+        if (parts.length == 0 || parts.length > 2) {
+            log.warn("Invalid database value is ignored: " + s);
+            // If this should not be allowed, then throw a
+            // FieldValidationException instead
+            return null;
+        }
+        String username = "++";
+        String hashcalc = "--";
+        if (parts.length == 2) {
+            username = parts[0];
+            hashcalc = parts[1];
+        }
+        return new Carrier(username, hashcalc);
+    }
+
+
+    @Nonnull
+    @Override
+    protected PersistenceFieldType getDatabaseType() {
+        return DB_TYPE;
+    }
+
+    @Nullable
+    @Override
+    protected Object getDbValueFromObject(Carrier carrier) {
+
+        log.warn("================ getDbValueFromObject");
+
+
+        if (carrier == null) {
+            log.warn("carrier: null");
+            return null;
+        }
+
+        log.warn("carrier: " + carrier.toString());
+
+        return carrier.toString();
+    }
+
+    @Nullable
+    @Override
+    protected Carrier getObjectFromDbValue(@Nonnull Object o) throws FieldValidationException {
+        return getSingularObjectFromString((String) o);
+    }
+
+
+    @Override
+    public Carrier getValueFromCustomFieldParams(CustomFieldParams relevantParams) throws FieldValidationException {
+
+        if (relevantParams == null) {
+            return null;
+        }
+
+        Collection values = relevantParams.getAllValues();
+        if ((values != null) && !values.isEmpty()) {
+            Collection<Carrier> value = new ArrayList<Carrier>();
+        }
+
+
+
+
+//        if (relevantParams == null) {
+//            return null;
+//        } else {
+//            Collection normalParams = relevantParams.getValuesForKey((String)null);
+//            if (normalParams != null && !normalParams.isEmpty()) {
+//                String singleParam = (String)normalParams.iterator().next();
+//                return TextUtils.stringSet(singleParam) ? this.getSingularObjectFromString(singleParam) : null;
+//            } else {
+//                return null;
+//            }
+//        }
+
+
+
+
+//        log.warn("=================== getValueFromCustomFieldParams");
+//        log.warn(relevantParams.getKeysAndValues().toString());
 //
-//    /**
-//     * Convert a database representation of a Carrier object into
-//     * a Carrier object. This method is also used for bulk moves and imports.
-//     */
-//    /* перевод из строки в транспортный объект (при передаче данных от пользователя)*/
-//    @Override
-//    public Carrier getSingularObjectFromString(String s) throws FieldValidationException {
-//        // s = dbvalue
-//        if (StringUtils.isEmpty(s)) {
-//            return null;
-//        }
-//        String[] parts = s.split(DB_SEP);
-//        if (parts.length == 0 || parts.length > 2) {
-//            log.warn("Invalid database value for MultipleValuesCFType ignored: " + s);
-//            // If this should not be allowed, then throw a
-//            // FieldValidationException instead
-//            return null;
-//        }
-//        String username = "";
-//        String hashcalc = "";
-//        if (parts.length == 2) {
-//            username = parts[0];
-//            hashcalc = parts[1];
-//        }
-//        return new Carrier(username, hashcalc);
-//    }
+//
+//        return super.getValueFromCustomFieldParams(relevantParams);
+
+        if ((relevantParams != null) && (!relevantParams.isEmpty())) {
+
+            log.warn("=================== getValueFromCustomFieldParams");
 
 
-    @Override
-    public String getStringFromSingularObject(String s) {
+//            String username = relevantParams.getValuesForNullKey().;
+//            String password = (List<String>)relevantParams.getValuesForKey("2");
+
+            log.warn("getValuesForNullKey: " + relevantParams.getValuesForNullKey().toString());
+            log.warn("getValuesForKey_1: " + relevantParams.getValuesForKey("1").toString());
+
+
+
+//            Carrier carrier = new Carrier(username, password);
+
+//            return carrier;
+        }
         return null;
-    }
 
-    @Override
-    public String getSingularObjectFromString(String s) throws FieldValidationException {
-        return null;
-    }
-
-    @Override
-    public Set<Long> remove(CustomField customField) {
-        return null;
-    }
-
-    @Override
-    public void validateFromParams(CustomFieldParams customFieldParams, ErrorCollection errorCollection, FieldConfig fieldConfig) {
-
-    }
-
-    @Override
-    public void createValue(CustomField customField, Issue issue, @Nonnull Carrier carrier) {
-
-    }
-
-    @Override
-    public void updateValue(CustomField customField, Issue issue, Carrier carrier) {
-
-    }
-
-    @Override
-    public Carrier getValueFromCustomFieldParams(CustomFieldParams customFieldParams) throws FieldValidationException {
-        return null;
-    }
-
-    @Override
-    public Object getStringValueFromCustomFieldParams(CustomFieldParams customFieldParams) {
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public Carrier getValueFromIssue(CustomField customField, Issue issue) {
-        return null;
-    }
-
-    @Override
-    public Carrier getDefaultValue(FieldConfig fieldConfig) {
-        return null;
-    }
-
-    @Override
-    public void setDefaultValue(FieldConfig fieldConfig, Carrier carrier) {
-
-    }
-
-    @Nullable
-    @Override
-    public String getChangelogValue(CustomField customField, Carrier carrier) {
-        return null;
     }
 
     @Override
@@ -181,10 +221,18 @@ public class SimpleSignature extends AbstractCustomFieldType<Carrier, String>  {
             return map;
         }
 
-         FieldConfig fieldConfig = field.getRelevantConfig(issue);
-         //add what you need to the map here
+
+        log.warn("============= getVelocityParameters =============");
+        log.warn("issue: " + issue.toString());
+        log.warn("field: " + field.toString());
+        log.warn("fieldLayoutItem: " + fieldLayoutItem.toString());
+
+        FieldConfig fieldConfig = field.getRelevantConfig(issue);
+        //add what you need to the map here
+
+        map.put("username", jiraAuthenticationContext.getLoggedInUser().getName());
+        map.put("sometext", "cool");
 
         return map;
     }
-
- }
+}

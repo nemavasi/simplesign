@@ -4,11 +4,29 @@
 
 #controlHeader ($action $customField.id $customField.name $fieldLayoutItem.required $displayParameters.noHeader)
 
-<input class="text" id="${customField.id}" name="${customField.id}" type="text" value="$!username" placeholder="Имя пользователя">
+
+#set ($carrier = $customField.getValue($issue))
+
+##<input class="text" id="${customField.id}" name="${customField.id}" type="text" value="$!username" placeholder="Имя пользователя">
+##
+##<input class="text" id="password" type="text" name="${customField.id}:1" placeholder="Пароль">
+
+<input class="text" id="${customField.id}" name="${customField.id}" type="text" value="" placeholder="Имя пользователя">
 
 <input class="text" id="password" type="text" name="${customField.id}:1" placeholder="Пароль">
 
+
+
 <div class="description">$sometext</div>
+<div class="description">$value</div>
+<div class="description">$carrier</div>
+<div class="description">$carrier.username</div>
+<div class="description">$carrier.getUsername()</div>
+
+<div class="description">$Carrier</div>
+<div class="description">$Carrier.username</div>
+<div class="description">$Carrier.getUsername()</div>
+
 
 
 <div class="error" data-field="credential" id="credential-error">$!errors.get("credential")</div>

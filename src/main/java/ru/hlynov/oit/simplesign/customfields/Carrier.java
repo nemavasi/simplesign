@@ -1,32 +1,58 @@
 package ru.hlynov.oit.simplesign.customfields;
 
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Carrier {
-    private String userName;
-    private String hashCalc;
+    private String username;
+    private String hashcalc;
 
-    public Carrier(String userName, String hashCalc) {
-        this.userName = userName;
-        this.hashCalc = hashCalc;
+    private static final Logger log = LoggerFactory.getLogger(Carrier.class);
+
+    public Carrier() {
+        log.warn(" ======== constr 1");
     }
 
-    public String getUserName() {
-        return userName;
+
+    public Carrier(String username, String hashcalc) {
+        this.username = username;
+        this.hashcalc = hashcalc;
+
+        log.warn(" ======== constr 2");
+
+        if (username == null) {
+            log.warn(" name = null");
+        } else {
+            log.warn(" name = " + username);
+        }
+
+        if (hashcalc == null) {
+            log.warn(" hashCalc = null");
+        } else {
+            log.warn(" hashCalc = " + hashcalc);
+        }
+
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public String getUsername() {
+        return username;
     }
 
-    public String getHashCalc() {
-        return hashCalc;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
-    public void setHashCalc(String hashCalc) {
-        this.hashCalc = hashCalc;
+    public String getHashcalc() {
+        return hashcalc;
+    }
+
+    public void setHashcalc(String hashcalc) {
+        this.hashcalc = hashcalc;
     }
 
     @Override
     public String toString() {
-        return userName + "###" + hashCalc;
+        return username + "###" + hashcalc;
     }
 }
