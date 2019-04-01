@@ -1,10 +1,13 @@
 package ru.hlynov.oit.simplesign.customfields;
 
+import com.atlassian.jira.component.ComponentAccessor;
+
 import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.issue.IssueManager;
 import com.atlassian.jira.issue.customfields.impl.CalculatedCFType;
 import com.atlassian.jira.issue.customfields.view.CustomFieldParams;
 import com.atlassian.jira.security.JiraAuthenticationContext;
+import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.util.ErrorCollection;
 import com.atlassian.sal.api.user.UserManager;
 import com.opensymphony.util.TextUtils;
@@ -24,6 +27,7 @@ import com.atlassian.jira.issue.customfields.impl.AbstractSingleFieldType;
 import com.atlassian.jira.issue.customfields.persistence.PersistenceFieldType;
 
 import com.atlassian.plugin.spring.scanner.annotation.imports.JiraImport;
+import com.atlassian.sal.api.user.UserManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,7 +47,7 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
     private JiraAuthenticationContext jiraAuthenticationContext;
 //    private CustomFieldManager customFieldManager;
 //    private IssueManager issueManager;
-//    private UserManager userManager;
+    private UserManager userManager;
     private CustomFieldValuePersister customFieldValuePersister;
     private GenericConfigManager genericConfigManager;
 
@@ -59,34 +63,13 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
 
     protected SimpleSignature(@JiraImport CustomFieldValuePersister customFieldValuePersister,
                               @JiraImport GenericConfigManager genericConfigManager,
-                              @JiraImport JiraAuthenticationContext jiraAuthenticationContext
+                              @JiraImport JiraAuthenticationContext jiraAuthenticationContext,
+                              @JiraImport UserManager userManager
     ) {
         super(customFieldValuePersister, genericConfigManager);
         this.jiraAuthenticationContext = jiraAuthenticationContext;
+        this.userManager = userManager;
     }
-
-
-    @Override
-    public void createValue(CustomField field, Issue issue, @Nonnull Carrier value) {
-        log.warn(" ============== createValue");
-        log.warn("value: " + value);
-
-
-        super.createValue(field, issue, value);
-    }
-
-    @Override
-    public void updateValue(CustomField customField, Issue issue, Carrier value) {
-        log.warn(" ============== updateValue");
-        log.warn("value: " + value);
-
-
-        super.updateValue(customField, issue, value);
-    }
-
-
-
-
 
     /* перевод из транспортного объекта в строку - в вид для сохранения в бд*/
     @Override
@@ -132,15 +115,10 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
     @Override
     protected Object getDbValueFromObject(Carrier carrier) {
 
-        log.warn("================ getDbValueFromObject");
-
-
         if (carrier == null) {
             log.warn("carrier: null");
             return null;
         }
-
-        log.warn("carrier: " + carrier.toString());
 
         return carrier.toString();
     }
@@ -159,12 +137,10 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
             return null;
         }
 
-        Collection values = relevantParams.getAllValues();
-        if ((values != null) && !values.isEmpty()) {
-            Collection<Carrier> value = new ArrayList<Carrier>();
-        }
-
-
+//        Collection values = relevantParams.getAllValues();
+//        if ((values != null) && !values.isEmpty()) {
+//            Collection<Carrier> value = new ArrayList<Carrier>();
+//        }
 
 
 //        if (relevantParams == null) {
@@ -180,34 +156,106 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
 //        }
 
 
-
-
-//        log.warn("=================== getValueFromCustomFieldParams");
-//        log.warn(relevantParams.getKeysAndValues().toString());
-//
-//
-//        return super.getValueFromCustomFieldParams(relevantParams);
-
         if ((relevantParams != null) && (!relevantParams.isEmpty())) {
 
             log.warn("=================== getValueFromCustomFieldParams");
 
 
-//            String username = relevantParams.getValuesForNullKey().;
-//            String password = (List<String>)relevantParams.getValuesForKey("2");
+            Collection<String> usernameCl = relevantParams.getValuesForNullKey();
+            Collection<String> passwordCl = relevantParams.getValuesForKey("1");
+
+            if ((usernameCl == null) || (passwordCl == null)) {
+                return null;
+            }
+
+            String username = null;
+            String password = null;
+
+            Iterator<String> iter = usernameCl.iterator();
+
+            if (iter.hasNext()) {
+                username = iter.next();
+            }
+
+            iter = passwordCl.iterator();
+
+            if (iter.hasNext()) {
+                password = iter.next();
+            }
+
+            if ((username == null) || (password == null)) {
+                return null;
+            }
 
             log.warn("getValuesForNullKey: " + relevantParams.getValuesForNullKey().toString());
             log.warn("getValuesForKey_1: " + relevantParams.getValuesForKey("1").toString());
 
 
 
-//            Carrier carrier = new Carrier(username, password);
+            Carrier carrier = new Carrier(username, "hash_string");
 
-//            return carrier;
+            return carrier;
         }
         return null;
 
     }
+
+
+    @Override
+    public void validateFromParams(CustomFieldParams relevantParams, ErrorCollection errorCollectionToAddTo, FieldConfig config) {
+//        super.validateFromParams(relevantParams, errorCollectionToAddTo, config);
+
+
+        Collection<String> usernameCl = relevantParams.getValuesForNullKey();
+        Collection<String> passwordCl = relevantParams.getValuesForKey("1");
+
+        if ((usernameCl == null) || (passwordCl == null)) {
+            errorCollectionToAddTo.addError(config.getFieldId(), "не введены учетные данные");
+            return;
+        }
+
+        String username = null;
+        String password = null;
+
+
+        Iterator<String> iter = usernameCl.iterator();
+
+        if (iter.hasNext()) {
+            username = iter.next();
+        }
+
+        if (username == null) {
+            errorCollectionToAddTo.addError(config.getFieldId(), "не введено имя пользователя");
+            return;
+        }
+
+
+        iter = passwordCl.iterator();
+
+        if (iter.hasNext()) {
+            password = iter.next();
+        }
+
+        if (password == null) {
+            errorCollectionToAddTo.addError(config.getFieldId(), "не введен пароль");
+            return;
+        }
+
+        ApplicationUser curUser = jiraAuthenticationContext.getLoggedInUser();
+
+        if (!username.equals(curUser.getName())) {
+            errorCollectionToAddTo.addError(config.getFieldId(),  username +" не является текущим пользователем");
+            return;
+        }
+
+        boolean isAuthenticated = this.userManager.authenticate(username, password);
+        if (!isAuthenticated) {
+            errorCollectionToAddTo.addError(config.getFieldId(),  username +" аутентификация не пройдена. Неверное имя пользователя или пароль");
+            return;
+        }
+
+    }
+
 
     @Override
     public Map<String, Object> getVelocityParameters(final Issue issue,
@@ -231,6 +279,7 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
         //add what you need to the map here
 
         map.put("username", jiraAuthenticationContext.getLoggedInUser().getName());
+        map.put("baseurl",ComponentAccessor.getApplicationProperties().getString("jira.baseurl"));
         map.put("sometext", "cool");
 
         return map;

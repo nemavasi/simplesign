@@ -1,1 +1,71 @@
-<h1>view.vm</h1>
+
+<script src="$baseurl/download/resources/ru.hlynov.oit.simplesign.simplesignature:simplesignature-resources/simplesignature.js">
+
+    // var simplesign = {};
+    // simplesign.module = [];
+    //
+    // simplesign.module = (function () {
+    //
+    //     var visible = false;
+    //
+    //     var checkSumClick = function() {
+    //
+    //         if (visible) {
+    //             AJS.$("#showSign").hide("slow");
+    //             visible = false;
+    //             return true;
+    //         }
+    //
+    //         if (!visible) {
+    //             AJS.$("#showSign").show("slow");
+    //             visible = true;
+    //             return true;
+    //         }
+    //
+    //    }
+    //
+    //
+    //     return {
+    //         checkSumClick:checkSumClick
+    //     };
+    //
+    //
+    //
+    // }());
+    ##
+
+
+</script>
+
+
+
+
+<div>
+    <div style="float: left; margin-right: 10px;">
+        <img src="$baseurl/download/resources/ru.hlynov.oit.simplesign.simplesignature:simplesignature-resources/images/user-id-icon.png"></img>
+    </div>
+
+    <div style="width: 400px;">
+        <div>Семенов Семен Семенович (admin)</div>
+        <div>Подписано 01.04.2019 <button id="checkSum" style="cursor: pointer; color: #FF0000; background-color: #FFFFFF; border: none" onclick="simplesign.module.checkSumClick()">контрольные суммы</button>
+    </div>
+</div>
+
+
+    <div id="showSign" style="display: none">
+        <ul>
+            <li>
+                <div style="float: left; width: 100px">заголовок</div><div style="float: left; width: 100px">статус</div><div>проверить</div>
+            </li>
+            <li>
+                <div style="float: left; width: 100px">заголовок</div><div style="float: left; width: 100px">статус</div><div>проверить</div>
+            </li>
+            <li>
+                <div style="float: left; width: 100px">заголовок</div><div style="float: left; width: 100px">статус</div><div>проверить</div>
+            </li>
+            <li>
+                <div style="float: left; width: 100px">заголовок</div><div style="float: left; width: 100px">статус</div><div>проверить</div>
+            </li>
+        </ul>
+
+    </div>
