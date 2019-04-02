@@ -8,14 +8,23 @@ simplesign.module = (function () {
 
     var checkSumClick = function() {
 
+        // всплывающее окно
+        var objSignDetailDiv = AJS.$("#signDetailDiv");
+
         if (visible) {
-            AJS.$("#showSign").hide("slow");
+            objSignDetailDiv.css("display", "none");
+
             visible = false;
             return true;
         }
 
         if (!visible) {
-            AJS.$("#showSign").show("slow");
+
+            objSignDetailDiv.css("top", 45);
+            objSignDetailDiv.css("left", 100);
+
+            objSignDetailDiv.show("fast");
+
             visible = true;
             return true;
         }
