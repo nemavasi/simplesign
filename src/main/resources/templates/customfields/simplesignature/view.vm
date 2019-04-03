@@ -67,9 +67,9 @@
         <img src="$baseurl/download/resources/ru.hlynov.oit.simplesign.simplesignature:simplesignature-resources/images/user-id-icon.png"></img>
     </div>
 
-    <div style="width: 400px;">
-        <div>Семенов Семен Семенович (admin)</div>
-        <div>Подписано 01.04.2019 <button id="checkSum" style="cursor: pointer; color: #FF0000; background-color: #FFFFFF; border: none" onclick="simplesign.module.checkSumClick()">контрольные суммы</button>
+    <div style="width: 500px;">
+        <div>$fullusername ($username)</div>
+        <div>Подписано $signdate <button id="checkSum" style="cursor: pointer; color: #FF0000; background-color: #FFFFFF; border: none" onclick="simplesign.module.checkSumClick()">контрольные суммы</button>
     </div>
 
         <div id="signDetailDiv">

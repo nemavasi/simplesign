@@ -28,9 +28,14 @@ import com.atlassian.jira.issue.customfields.persistence.PersistenceFieldType;
 
 import com.atlassian.plugin.spring.scanner.annotation.imports.JiraImport;
 import com.atlassian.sal.api.user.UserManager;
+import ru.hlynov.oit.simplesign.tools.AttacmentsTools;
+import ru.hlynov.oit.simplesign.tools.JsonConvertor;
+import ru.hlynov.oit.simplesign.tools.SignCalculator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 
@@ -46,11 +51,14 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
 
     private JiraAuthenticationContext jiraAuthenticationContext;
 //    private CustomFieldManager customFieldManager;
-//    private IssueManager issueManager;
     private UserManager userManager;
     private CustomFieldValuePersister customFieldValuePersister;
     private GenericConfigManager genericConfigManager;
+    private IssueManager issueManager;
 
+    // internal vars
+    private String issueId;
+    private String projectId;
 
     // The type of data in the database, one entry per value in this field
     private static final PersistenceFieldType DB_TYPE = PersistenceFieldType.TYPE_UNLIMITED_TEXT;
@@ -64,11 +72,14 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
     protected SimpleSignature(@JiraImport CustomFieldValuePersister customFieldValuePersister,
                               @JiraImport GenericConfigManager genericConfigManager,
                               @JiraImport JiraAuthenticationContext jiraAuthenticationContext,
-                              @JiraImport UserManager userManager
+                              @JiraImport UserManager userManager,
+                              @JiraImport IssueManager issueManager
+
     ) {
         super(customFieldValuePersister, genericConfigManager);
         this.jiraAuthenticationContext = jiraAuthenticationContext;
         this.userManager = userManager;
+        this.issueManager = issueManager;
     }
 
     /* перевод из транспортного объекта в строку - в вид для сохранения в бд*/
@@ -89,19 +100,21 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
             return null;
         }
         String[] parts = s.split(DB_SEP);
-        if (parts.length == 0 || parts.length > 2) {
+        if (parts.length != 3) {
             log.warn("Invalid database value is ignored: " + s);
             // If this should not be allowed, then throw a
             // FieldValidationException instead
             return null;
         }
-        String username = "++";
-        String hashcalc = "--";
-        if (parts.length == 2) {
+        String username = "no_user";
+        String signdate = "01.01.0001 00:00:00";
+        String hashcalc = "np_sign";
+        if (parts.length == 3) {
             username = parts[0];
-            hashcalc = parts[1];
+            signdate = parts[1];
+            hashcalc = parts[2];
         }
-        return new Carrier(username, hashcalc);
+        return new Carrier(username, signdate, hashcalc);
     }
 
 
@@ -164,6 +177,8 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
             Collection<String> usernameCl = relevantParams.getValuesForNullKey();
             Collection<String> passwordCl = relevantParams.getValuesForKey("1");
 
+            Collection<String> issueIds = relevantParams.getValuesForKey("com.atlassian.jira.internal.issue_id");
+
             if ((usernameCl == null) || (passwordCl == null)) {
                 return null;
             }
@@ -187,12 +202,34 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
                 return null;
             }
 
-            log.warn("getValuesForNullKey: " + relevantParams.getValuesForNullKey().toString());
-            log.warn("getValuesForKey_1: " + relevantParams.getValuesForKey("1").toString());
 
+            if (this.issueId == null) {
+                return null;
+            }
 
+//            log.warn("issueId: " + issueId);
 
-            Carrier carrier = new Carrier(username, "hash_string");
+            Long issueIdLong = Long.valueOf(Long.parseLong(this.issueId));
+            Issue issue = this.issueManager.getIssueObject(issueIdLong);
+
+            String issueSummaryHash = SignCalculator.getStringCheckusm(issue.getSummary());
+            String issueDescriptionHash = SignCalculator.getStringCheckusm(issue.getDescription());
+
+            String jsonStr = JsonConvertor.getJsonFromParams(username, issueSummaryHash, issueDescriptionHash, AttacmentsTools.getAttachmentsInfo(issue));
+//            log.warn("====================== jsonStr");
+//            log.warn(jsonStr);
+
+//            log.warn("issue.getSummary(): " + issue.getSummary());
+//            log.warn("issueSummaryHash: " + issueSummaryHash);
+
+//            log.warn("getValuesForNullKey: " + relevantParams.getValuesForNullKey().toString());
+//            log.warn("getValuesForKey_1: " + relevantParams.getValuesForKey("1").toString());
+
+            // тек дата в формате
+            DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+            Date date = new Date();
+
+            Carrier carrier = new Carrier(username, dateFormat.format(date), jsonStr);
 
             return carrier;
         }
@@ -208,6 +245,22 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
 
         Collection<String> usernameCl = relevantParams.getValuesForNullKey();
         Collection<String> passwordCl = relevantParams.getValuesForKey("1");
+
+        log.warn("relevantParams from validateFromParams: " + relevantParams.toString());
+
+
+//        com.atlassian.jira.internal.issue_id=[10000]
+//        com.atlassian.jira.internal.requireProjectIds=[true]
+//        com.atlassian.jira.internal.project_id=[10000]
+
+        // получим id задачи
+        Collection<String> issueIds = relevantParams.getValuesForKey("com.atlassian.jira.internal.issue_id");
+        this.issueId = issueIds != null ? (String)issueIds.iterator().next() : null;
+
+        // получим id проекта
+        Collection<String> projectIds = relevantParams.getValuesForKey("com.atlassian.jira.internal.project_id");
+        this.projectId = projectIds != null ? (String)projectIds.iterator().next() : null;
+
 
         if ((usernameCl == null) || (passwordCl == null)) {
             errorCollectionToAddTo.addError(config.getFieldId(), "не введены учетные данные");
@@ -263,22 +316,31 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
                                                      final FieldLayoutItem fieldLayoutItem) {
         final Map<String, Object> map = super.getVelocityParameters(issue, field, fieldLayoutItem);
 
+
         // This method is also called to get the default value, in
         // which case issue is null so we can't use it to add currencyLocale
         if (issue == null) {
             return map;
         }
 
-
         log.warn("============= getVelocityParameters =============");
         log.warn("issue: " + issue.toString());
         log.warn("field: " + field.toString());
         log.warn("fieldLayoutItem: " + fieldLayoutItem.toString());
 
+        log.warn("field value: " + ((Carrier)(field.getValue(issue))).getSigndate());
+
         FieldConfig fieldConfig = field.getRelevantConfig(issue);
         //add what you need to the map here
 
-        map.put("username", jiraAuthenticationContext.getLoggedInUser().getName());
+        String username = ((Carrier)(field.getValue(issue))).getUsername();
+
+        ApplicationUser user = ComponentAccessor.getUserManager().getUserByName(username);
+
+        map.put("username", username);
+        map.put("fullusername", user.getDisplayName());
+        map.put("signdate", ((Carrier)(field.getValue(issue))).getSigndate());
+//        map.put("username", jiraAuthenticationContext.getLoggedInUser().getName());
         map.put("baseurl",ComponentAccessor.getApplicationProperties().getString("jira.baseurl"));
         map.put("sometext", "cool");
 
