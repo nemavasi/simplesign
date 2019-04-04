@@ -12,6 +12,7 @@
         border: 1px solid #c1c7d0;
         box-shadow: 3px 3px 3px 1px #000000;
         padding: 10px;
+        z-index: 100;
     }
 
     div#signDetailDiv ul {
@@ -23,6 +24,8 @@
     div#signDetailDiv .sign-name {
         float: left;
         width: 200px;
+        height: 20px;
+        overflow: hidden;
     }
 
     div#signDetailDiv .sign-status {
@@ -32,6 +35,7 @@
     }
 
     div#signDetailDiv .sign-bthcheck {
+        float: left;
         text-align: center;
     }
 
@@ -69,13 +73,18 @@
 
     <div style="width: 500px;">
         <div>$fullusername ($username)</div>
-        <div>Подписано $signdate <button id="checkSum" style="cursor: pointer; color: #FF0000; background-color: #FFFFFF; border: none" onclick="simplesign.module.checkSumClick()">контрольные суммы</button>
+        <div>Подписано $signdate <button id="checkSum" style="cursor: pointer; color: #FF0000; background-color: #FFFFFF; border: none" onclick="simplesign.module.checkSumClick()">контрольные суммы</button></div>
+        <input id="signissueid" type="hidden" value="$issueid">
+        <input id="signfieldid" type="hidden" value="$fieldid">
     </div>
 
         <div id="signDetailDiv">
             <ul>
                 <li style="background-color: #e1e4e9; color: #42526e">
                     <div class="sign-name">Компоненты подписи</div><div class="sign-status">&nbsp;</div><div class="sign-bthcheck"><button style="background-color: #e1e4e9;">проверить все</button></div>
+                    <div>
+                        <img src="$baseurl/download/resources/ru.hlynov.oit.simplesign.simplesignature:simplesignature-resources/images/spin.gif"></img>
+                    </div>
                 </li>
 
                 <li>

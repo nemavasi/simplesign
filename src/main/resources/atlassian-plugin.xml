@@ -23,4 +23,7 @@
     <resource name="view" type="velocity" location="/templates/customfields/simplesignature/view.vm"/>
     <resource name="edit" type="velocity" location="/templates/customfields/simplesignature/edit.vm"/>
   </customfield-type>
+  <rest name="Sign Rest" i18n-name-key="sign-rest.name" key="sign-rest" path="/simplesignrest" version="1.0">
+    <description key="sign-rest.description">The Sign Rest Plugin</description>
+  </rest>
 </atlassian-plugin>
