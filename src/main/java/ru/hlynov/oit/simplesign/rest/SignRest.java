@@ -39,18 +39,42 @@ public class SignRest {
 //        CustomField customField = ComponentAccessor.getCustomFieldManager().getCustomFieldObject(Long.valueOf(fieldId));
         CustomField customField = ComponentAccessor.getCustomFieldManager().getCustomFieldObject(fieldId);
 
-        log.warn("issueId: " + issueId);
-        log.warn("fieldId: " + fieldId);
-
-        log.warn("issue: " + issue);
-        log.warn("customField: " + customField);
-
         Carrier carrier = (Carrier) issue.getCustomFieldValue(customField);
-        log.warn("carrier: " + carrier.toString());
 
         retVal = JsonConvertor.getAttachmentNames(carrier.getHashcalc());
 
 //        return Response.ok(new SignRestModel("Hello World")).build();
         return Response.ok(retVal).build();
     }
+
+    // 2 - возврат цифровой подписи конкретной компоненты поля
+    // на входе нужен идентификатор задачи
+    // тип объекта (заголовок, описание, вложение)
+    // идентификатор вложения, если вложение
+
+    @GET
+    @AnonymousAllowed
+    @Produces({MediaType.APPLICATION_JSON})
+    @Path("/getsignature/{issueid}/{fieldid}/{objid}/{attachid}")
+    public Response getAttachNames(@PathParam("issueid") String issueId,
+                                   @PathParam("fieldid") String fieldId,
+                                   @PathParam("objid") String objId,
+                                   @PathParam("attachid") String attachId
+    )
+    {
+        String retVal = "{}"; // return value
+
+        MutableIssue issue = ComponentAccessor.getIssueManager().getIssueObject(Long.valueOf(issueId));
+//        CustomField customField = ComponentAccessor.getCustomFieldManager().getCustomFieldObject(Long.valueOf(fieldId));
+        CustomField customField = ComponentAccessor.getCustomFieldManager().getCustomFieldObject(fieldId);
+
+        Carrier carrier = (Carrier) issue.getCustomFieldValue(customField);
+
+
+
+        return Response.ok(retVal).build();
+
+
+    }
+
 }

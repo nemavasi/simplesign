@@ -16,13 +16,26 @@ simplesign.module = (function () {
     var visible = false;
 
     ////////////////////////////////////////
-    // события по нажатию на кнопки
+    // события по нажатию на кнопки - запрос подписи с сервера
     ////////////////////////////////////////
-    var callServerRest = function(obj, id) {
+    // objname - название объекта
+    // issieid - идентификатор задачи
+    // attachmentid - идентификатор задачи
+    var getSignForObject = function(obj) {
+
+        var issueId = AJS.$("input#signissueid");
+
+        // сначала нужно определить тип объекта
+        var objId = AJS.$(obj).parent().parent().find("div.sign-name").attr("id");
 
 
 
-        console.log("obj: " + obj + " id: " +  id);
+
+        // // console.log("objname: " + objname + " issueId: " +  issueId + " attachmentid: " + attachmentid);
+        // console.log(" event log ");
+        // console.log(obj);
+        // console.log(objId);
+        // console.log(AJS.$(obj).parent().parent().find("div.sign-name"));
 
         // console.log(" ======================== ");
         // for (var i = 0; i < arguments.length; i++) {
@@ -30,7 +43,6 @@ simplesign.module = (function () {
         // }
 
     }
-
 
 
     ////////////////////////////////////////
@@ -41,19 +53,24 @@ simplesign.module = (function () {
             '<div id="__objectId__" class="sign-name">__object__</div>' +
             '<div class="sign-status status-ok">__status__</div>' +
             '<div class="sign-bthcheck"><button>проверить</button></div>' +
+            '<div class="sign-spin" style="display: none">' +
+            '<img src="' + AJS.params.baseURL + '/download/resources/ru.hlynov.oit.simplesign.simplesignature:simplesignature-resources/images/spin.gif"></img>' +
+            '</div>';
+
             '</li>';
 
         var tableObj = AJS.$("div#signDetailDiv ul");
+        // var tableObjRows = AJS.$("div#signDetailDiv ul li");
 
-        // // удалим все строки кроме заголовка
-        // var rows = AJS.$("div#signDetailDiv ul li");
-        // var rowsSize = rows.size();
-        // for( var i = rowsSize - 1; i > 0; i--) {
-        //     rows[i].remove();
-        // }
-        // // почистим сообщение статуса
-        // // AJS.$("div#signDetailDiv div .status-bad").text("");
-        // AJS.$("div#signDetailDiv div.sign-total").text("")
+        // удалим все строки кроме заголовка
+        var rows = AJS.$("div#signDetailDiv ul li");
+        var rowsSize = rows.size();
+        for( var i = rowsSize - 1; i > 0; i--) {
+            rows[i].remove();
+        }
+        // почистим сообщение статуса
+        // AJS.$("div#signDetailDiv div .status-bad").text("");
+        AJS.$("div#signDetailDiv div.sign-total").text("");
 
 
         // добавление строк
@@ -66,8 +83,11 @@ simplesign.module = (function () {
         // добавляем строку
         tableObj.append(rowStr);
         // привязываем событие
-        AJS.$(tableObj[tableObj.size() - 1]).find(".sign-bthcheck button").bind("click", function() {
-            callServerRest("summ", "", 123);
+        rows = AJS.$("div#signDetailDiv ul li");
+        AJS.$(rows[rows.size() - 1]).find(".sign-bthcheck button").bind("click", function() {
+            getSignForObject(this);
+
+            // callServerRest(this);
         });
 
         // описание
@@ -76,7 +96,16 @@ simplesign.module = (function () {
         rowStr = rowStr.replace("__status__", "&nbsp;");
 
         tableObj.append(rowStr);
+        rows = AJS.$("div#signDetailDiv ul li");
 
+        AJS.$(rows[rows.size() - 1]).find(".sign-bthcheck button").bind("click", function() {
+            getSignForObject(this);
+
+            // callServerRest(this);
+        });
+
+
+        // return true;
 
         // тут надо делать вызов рест для того чтобы получить имена файлов во вложениии
         // которые находятся в подписи
@@ -92,27 +121,25 @@ simplesign.module = (function () {
                 var dataLength = data.length;
                 var strMess = "";
 
-                console.log(data);
-
-
-                // for (var i = 0; i < dataLength; i++) {
-                //     strMess = strMess + '<li>' + data[i] + '</li>';
-                // }
-                //
-                // strMess = '<ul>' + strMess +'</ul>';
-
-                // var myFlag = AJS.flag({
-                //     title: "Загружены вложения",
-                //     type: 'success',
-                //     body: strMess,
-                // });
-
-
-                // обновление окна задачи
-                // JIRA.trigger(JIRA.Events.REFRESH_ISSUE_PAGE, [JIRA.Issue.getIssueId()]);
-
                 // console.log(data);
-                // user = data.username;
+
+                for (var i = 0; i < dataLength; i++) {
+
+                    rowStr = rowTemplate.replace("__objectId__", "attach_" + data[i].id);
+                    rowStr = rowStr.replace("__object__", data[i].name);
+                    rowStr = rowStr.replace("__status__", "&nbsp;");
+
+                    tableObj.append(rowStr);
+
+
+                    rows = AJS.$("div#signDetailDiv ul li");
+                    AJS.$(rows[rows.size() - 1]).find(".sign-bthcheck button").bind("click", function() {
+                        getSignForObject(this);
+                    });
+
+
+                }
+                //
             },
             error: function(data) {
                 // var myFlag = AJS.flag({
@@ -125,29 +152,29 @@ simplesign.module = (function () {
 
 
 
-
-
-        // вложения
-        rowStr = rowTemplate.replace("__objectId__", "aatach_121212");
-        rowStr = rowStr.replace("__object__", "Вложение вложение вложение вложение вложение вложение ");
-        rowStr = rowStr.replace("__status__", "&nbsp;");
-
-        tableObj.append(rowStr);
-
-
-        rowStr = rowTemplate.replace("__objectId__", "aatach_232323");
-        rowStr = rowStr.replace("__object__", "Вложение вложение вложение вложение вложение вложение ");
-        rowStr = rowStr.replace("__status__", "&nbsp;");
-
-        tableObj.append(rowStr);
-
-
-        rowStr = rowTemplate.replace("__objectId__", "aatach_343434");
-        rowStr = rowStr.replace("__object__", "Вложение вложение вложение вложение вложение вложение ");
-        rowStr = rowStr.replace("__status__", "&nbsp;");
-
-        tableObj.append(rowStr);
-
+        //
+        //
+        // // вложения
+        // rowStr = rowTemplate.replace("__objectId__", "aatach_121212");
+        // rowStr = rowStr.replace("__object__", "Вложение вложение вложение вложение вложение вложение ");
+        // rowStr = rowStr.replace("__status__", "&nbsp;");
+        //
+        // tableObj.append(rowStr);
+        //
+        //
+        // rowStr = rowTemplate.replace("__objectId__", "aatach_232323");
+        // rowStr = rowStr.replace("__object__", "Вложение вложение вложение вложение вложение вложение ");
+        // rowStr = rowStr.replace("__status__", "&nbsp;");
+        //
+        // tableObj.append(rowStr);
+        //
+        //
+        // rowStr = rowTemplate.replace("__objectId__", "aatach_343434");
+        // rowStr = rowStr.replace("__object__", "Вложение вложение вложение вложение вложение вложение ");
+        // rowStr = rowStr.replace("__status__", "&nbsp;");
+        //
+        // tableObj.append(rowStr);
+        //
 
         return true;
 
@@ -184,6 +211,7 @@ simplesign.module = (function () {
 
     return {
         checkSumClick:checkSumClick
+        // callServerRest:callServerRest
     };
 
 

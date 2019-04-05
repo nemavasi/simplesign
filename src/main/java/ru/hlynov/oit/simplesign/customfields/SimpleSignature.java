@@ -340,7 +340,10 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
         map.put("username", username);
         map.put("fullusername", user.getDisplayName());
         map.put("signdate", ((Carrier)(field.getValue(issue))).getSigndate());
-//        map.put("username", jiraAuthenticationContext.getLoggedInUser().getName());
+
+
+
+        //        map.put("username", jiraAuthenticationContext.getLoggedInUser().getName());
         map.put("baseurl", ComponentAccessor.getApplicationProperties().getString("jira.baseurl"));
 
         map.put("issueid", issue.getId());

@@ -82,7 +82,7 @@
             <ul>
                 <li style="background-color: #e1e4e9; color: #42526e">
                     <div class="sign-name">Компоненты подписи</div><div class="sign-status">&nbsp;</div><div class="sign-bthcheck"><button style="background-color: #e1e4e9;">проверить все</button></div>
-                    <div>
+                    <div class="sign-spin" style="display: none">
                         <img src="$baseurl/download/resources/ru.hlynov.oit.simplesign.simplesignature:simplesignature-resources/images/spin.gif"></img>
                     </div>
                 </li>
