@@ -6,6 +6,7 @@ import com.atlassian.plugins.rest.common.security.AnonymousAllowed;
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.issue.MutableIssue;
 import ru.hlynov.oit.simplesign.customfields.Carrier;
+import ru.hlynov.oit.simplesign.tools.AttacmentsTools;
 import ru.hlynov.oit.simplesign.tools.JsonConvertor;
 
 import javax.ws.rs.*;
@@ -14,6 +15,8 @@ import javax.ws.rs.core.Response;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.hlynov.oit.simplesign.tools.SignCalculator;
+
 /**
  * A resource of message.
  */
@@ -55,22 +58,58 @@ public class SignRest {
     @GET
     @AnonymousAllowed
     @Produces({MediaType.APPLICATION_JSON})
-    @Path("/getsignature/{issueid}/{fieldid}/{objid}/{attachid}")
+    @Path("/getsignature/{issueid}/{fieldid}/{objName}/{attachid}")
     public Response getAttachNames(@PathParam("issueid") String issueId,
                                    @PathParam("fieldid") String fieldId,
-                                   @PathParam("objid") String objId,
+                                   @PathParam("objName") String objName,
                                    @PathParam("attachid") String attachId
     )
     {
         String retVal = "{}"; // return value
 
+//        log.warn("issueId: " + issueId);
+//        log.warn("fieldid: " + fieldId);
+//        log.warn("objid: " + objId);
+//        log.warn("attachId: " + attachId);
+
         MutableIssue issue = ComponentAccessor.getIssueManager().getIssueObject(Long.valueOf(issueId));
-//        CustomField customField = ComponentAccessor.getCustomFieldManager().getCustomFieldObject(Long.valueOf(fieldId));
         CustomField customField = ComponentAccessor.getCustomFieldManager().getCustomFieldObject(fieldId);
 
         Carrier carrier = (Carrier) issue.getCustomFieldValue(customField);
 
+        String signhash = "";
+        String realhash = "";
 
+
+
+        if (objName.equals("summary")) {
+            signhash = JsonConvertor.getStoredSignatureByName("summary", null, carrier.getHashcalc());
+            realhash = SignCalculator.getCalculatedSignatureByName("summary", issue.getSummary());
+
+//            log.warn(signhash);
+//            log.warn(realhash);
+
+            retVal = "{\"objname\" : \"summary\", \"signhash\":\"" + signhash + "\", \"realhash\":\"" + realhash + "\"}";
+        }
+
+        if (objName.equals("description")) {
+            signhash = JsonConvertor.getStoredSignatureByName("description", null, carrier.getHashcalc());
+            realhash = SignCalculator.getCalculatedSignatureByName("description", issue.getDescription());
+
+            retVal = "{\"objname\" : \"description\", \"signhash\":\"" + signhash + "\", \"realhash\":\"" + realhash + "\"}";
+        }
+
+        if (objName.equals("attachment")) {
+
+            // тут надо получить имя файла где сохранено вложение
+            String pathToAttachFile = AttacmentsTools.getPathToAttachment(issue, attachId);
+
+            signhash = JsonConvertor.getStoredSignatureByName("attachment", attachId, carrier.getHashcalc());
+            realhash = SignCalculator.getCalculatedSignatureByName("attachment", pathToAttachFile);
+
+            retVal = "{\"objname\" : \"attachment\", \"signhash\":\"" + signhash + "\", \"realhash\":\"" + realhash + "\"}";
+
+        }
 
         return Response.ok(retVal).build();
 

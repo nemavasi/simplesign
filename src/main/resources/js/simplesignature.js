@@ -13,7 +13,12 @@ simplesign.module = [];
 
 simplesign.module = (function () {
 
-    var visible = false;
+    var visible = false; // переменная - видимость всплытого окна
+    // TODO: реализовать блокировки чтобы предотвратить нажатия кнопок во время выполнения действия
+    // TODO: реализовать массовую проверку по кнопке ПроверитьВсе
+
+    var lockEvents = false; // признак блокировки
+
 
     ////////////////////////////////////////
     // события по нажатию на кнопки - запрос подписи с сервера
@@ -23,10 +28,100 @@ simplesign.module = (function () {
     // attachmentid - идентификатор задачи
     var getSignForObject = function(obj) {
 
+
+
         var issueId = AJS.$("input#signissueid");
 
         // сначала нужно определить тип объекта
         var objId = AJS.$(obj).parent().parent().find("div.sign-name").attr("id");
+
+        var objName = "";
+        var objAttachId= "*";
+
+        switch (objId) {
+            case "summ_sign":
+                objName = "summary";
+                break;
+            case "descr_sign":
+                objName = "description";
+                break;
+            default:
+                // console.log();
+                if (objId.substring(0, 11) == "attachsign_") {
+                    objName = "attachment";
+                    objAttachId = objId.substring(11);
+                }
+
+        }
+
+        var restUrl = AJS.params.baseURL + "/rest/simplesignrest/1.0/message/getsignature/" + AJS.$("input#signissueid").val() + "/" + AJS.$("input#signfieldid").val() + "/" + objName + "/" + objAttachId;
+
+
+        // console.log(url);
+
+        // return true;
+
+        // значения objId
+        // summ_sign
+        // descr_sign
+        // attach_sign_10000
+        // attach_sign_10002
+        // attach_sign_10001
+
+
+
+        AJS.$.ajax({
+            url: restUrl,
+            type: 'get',
+            dataType: 'json',
+            // data: JSON.stringify(jsonObj),
+            async: true,
+            contentType: "application/json; charset=utf-8",
+            success: function(data) {
+
+
+                if (data.signhash == data.realhash) {
+                    AJS.$("div#" + objId).parent().find(".sign-status").text("OK");
+                    AJS.$("div#" + objId).parent().find(".sign-status").removeClass("status-bad");
+                    AJS.$("div#" + objId).parent().find(".sign-status").addClass("status-ok");
+                } else {
+                    AJS.$("div#" + objId).parent().find(".sign-status").text("ОШИБКА");
+                    AJS.$("div#" + objId).parent().find(".sign-status").removeClass("status-ok");
+                    AJS.$("div#" + objId).parent().find(".sign-status").addClass("status-bad");
+                }
+
+
+
+                // var dataLength = data.length;
+                // var strMess = "";
+                //
+                // // console.log(data);
+                //
+                // for (var i = 0; i < dataLength; i++) {
+                //
+                //     rowStr = rowTemplate.replace("__objectId__", "attach_sign_" + data[i].id);
+                //     rowStr = rowStr.replace("__object__", data[i].name);
+                //     rowStr = rowStr.replace("__status__", "&nbsp;");
+                //
+                //     tableObj.append(rowStr);
+                //
+                //
+                //     rows = AJS.$("div#signDetailDiv ul li");
+                //     AJS.$(rows[rows.size() - 1]).find(".sign-bthcheck button").bind("click", function() {
+                //         getSignForObject(this);
+                //     });
+                //}
+                //
+            },
+            error: function(data) {
+                // var myFlag = AJS.flag({
+                //     type: 'error',
+                //     body: 'Ошибка загрузки',
+                // });
+
+            },
+        });
+
 
 
 
@@ -125,7 +220,7 @@ simplesign.module = (function () {
 
                 for (var i = 0; i < dataLength; i++) {
 
-                    rowStr = rowTemplate.replace("__objectId__", "attach_" + data[i].id);
+                    rowStr = rowTemplate.replace("__objectId__", "attachsign_" + data[i].id);
                     rowStr = rowStr.replace("__object__", data[i].name);
                     rowStr = rowStr.replace("__status__", "&nbsp;");
 
@@ -186,6 +281,14 @@ simplesign.module = (function () {
     ////////////////////////////////////////
     var checkSumClick = function() {
 
+        // если заблокировано то ничего не делаем, выходим
+        if (lockEvents) {
+            return true;
+        }
+
+        // блокируем на время работы функции
+        lockEvents = true;
+
 
         // всплывающее окно
         var objSignDetailDiv = AJS.$("#signDetailDiv");
@@ -193,6 +296,10 @@ simplesign.module = (function () {
         if (visible) {
             objSignDetailDiv.css("display", "none");
             visible = false;
+
+            // разблокируем по завершении
+            lockEvents = false;
+
             return true;
         }
 
@@ -202,10 +309,18 @@ simplesign.module = (function () {
 
             objSignDetailDiv.css("top", 45);
             objSignDetailDiv.css("left", 100);
-            objSignDetailDiv.show("fast");
+            objSignDetailDiv.css("display", "block");
+            // objSignDetailDiv.show("fast");
             visible = true;
+
+            // разблокируем по завершении
+            lockEvents = false;
+
             return true;
         }
+
+        // разблокируем по завершении
+        lockEvents = false;
 
     }
 

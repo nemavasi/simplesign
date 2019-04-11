@@ -11,6 +11,7 @@ public class SignCalculator {
 
     private static final Logger log = LoggerFactory.getLogger(SignCalculator.class);
 
+    // получить контрольную сумму от строки
     public static String getStringCheckusm(String stSign) {
 
         String st = stSign;
@@ -41,6 +42,7 @@ public class SignCalculator {
     }
 
 
+    // получить контрольную сумму от файла
     public static String getFileCheckusm(String fileName) throws IOException {
 
         MessageDigest md = null;
@@ -97,4 +99,29 @@ public class SignCalculator {
         //return complete hash
         return sb.toString();
     }
+
+
+    //  возвращает вычисленное значение контрольной суммы объекта
+    //  objName - имя объекта
+    //  attachId - идентификатор вложения
+    //  signValue - цифровая подпись
+    public static String getCalculatedSignatureByName(String objName, String objValue) {
+        if (objName.equals("summary") || objName.equals("description")) {
+            return getStringCheckusm(objValue);
+        }
+
+        if (objName.equals("attachment")) {
+            try {
+                return getFileCheckusm(objValue);
+            } catch (IOException e) {
+//                e.printStackTrace();
+                log.error("iio error", e);
+                return "";
+            }
+        }
+
+        return "";
+    }
+
+
 }

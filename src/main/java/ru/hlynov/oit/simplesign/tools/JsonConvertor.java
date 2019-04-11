@@ -92,5 +92,35 @@ public class JsonConvertor {
         return gson.toJson(jsonArray);
     }
 
+    //  возвращает значение контрольной суммы объекта из подписи
+    //  objName - имя объекта
+    //  attachId - идентификатор вложения
+    //  signValue - цифровая подпись
+    public static String getStoredSignatureByName(String objName, String attachId, String signValue) {
+        JsonElement jsonElement = new JsonParser().parse(signValue);
+        JsonObject jsonObject = jsonElement.getAsJsonObject();
+
+        if (objName.equals("summary")) {
+            return jsonObject.get("summary").getAsString();
+        }
+
+        if (objName.equals("description")) {
+            return jsonObject.get("description").getAsString();
+        }
+
+        if (objName.equals("attachment")) {
+
+            JsonArray jsonArray = jsonObject.getAsJsonArray("attachments");
+            for (int i = 0; i < jsonArray.size(); i++) {
+                JsonObject oneAttach = jsonArray.get(i).getAsJsonObject();
+                if(attachId.equals(oneAttach.get("id").getAsString())) {
+                    return oneAttach.get("hash").getAsString();
+                }
+            }
+        }
+        log.warn("for object " + objName + " signature not found");
+        return "";
+    }
+
 
 }

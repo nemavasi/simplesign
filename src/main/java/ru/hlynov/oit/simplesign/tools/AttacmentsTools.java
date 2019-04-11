@@ -42,6 +42,7 @@ public class AttacmentsTools {
 
             Map<String, String> attachInfo = new HashMap<String, String>();
             attachInfo.put("name", oneAttach.getFilename());
+//            attachInfo.put("id", String.valueOf(oneAttach.getId()));
 
             hash = null;
 
@@ -60,8 +61,20 @@ public class AttacmentsTools {
             attachs.put(String.valueOf(oneAttach.getId()), attachInfo);
         }
 
-
         return attachs;
+    }
+
+
+    // возвращает путь к файлу вложения
+    public static String getPathToAttachment(Issue issue, String attachId) {
+
+        AttachmentPathManager attachmentPathManager = ComponentAccessor.getAttachmentPathManager();
+        File rootDir = new File(attachmentPathManager.getAttachmentPath());
+
+        // каталог где лежат вложения
+        File attachDir = FileAttachments.getAttachmentDirectoryForIssue(rootDir,  issue.getProjectObject().getKey(), issue.getKey());
+
+        return attachDir.getPath() + "/" + attachId;
 
     }
 }
