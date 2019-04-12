@@ -19,6 +19,9 @@ simplesign.module = (function () {
 
     var lockEvents = false; // признак блокировки
 
+    var packetProcess = false;
+    var packetObjects = [];
+
 
     ////////////////////////////////////////
     // события по нажатию на кнопки - запрос подписи с сервера
@@ -26,8 +29,20 @@ simplesign.module = (function () {
     // objname - название объекта
     // issieid - идентификатор задачи
     // attachmentid - идентификатор задачи
+    // var getSignForObject = function(obj, asyncFlag = true) {
     var getSignForObject = function(obj) {
 
+        // asyncFlag = false;
+        // console.log("asyncFlag");
+        // console.log(asyncFlag);
+
+        // если заблокировано то ничего не делаем, выходим
+        if (lockEvents) {
+            return true;
+        }
+
+        // блокируем на время работы функции
+        lockEvents = true;
 
 
         var issueId = AJS.$("input#signissueid");
@@ -57,8 +72,6 @@ simplesign.module = (function () {
         var restUrl = AJS.params.baseURL + "/rest/simplesignrest/1.0/message/getsignature/" + AJS.$("input#signissueid").val() + "/" + AJS.$("input#signfieldid").val() + "/" + objName + "/" + objAttachId;
 
 
-        // console.log(url);
-
         // return true;
 
         // значения objId
@@ -69,6 +82,8 @@ simplesign.module = (function () {
         // attach_sign_10001
 
 
+        AJS.$("div#" + objId).parent().find(".sign-spin").css("display", "block");
+
 
         AJS.$.ajax({
             url: restUrl,
@@ -76,9 +91,9 @@ simplesign.module = (function () {
             dataType: 'json',
             // data: JSON.stringify(jsonObj),
             async: true,
+            // async: asyncFlag,
             contentType: "application/json; charset=utf-8",
             success: function(data) {
-
 
                 if (data.signhash == data.realhash) {
                     AJS.$("div#" + objId).parent().find(".sign-status").text("OK");
@@ -90,52 +105,31 @@ simplesign.module = (function () {
                     AJS.$("div#" + objId).parent().find(".sign-status").addClass("status-bad");
                 }
 
-
-
-                // var dataLength = data.length;
-                // var strMess = "";
-                //
-                // // console.log(data);
-                //
-                // for (var i = 0; i < dataLength; i++) {
-                //
-                //     rowStr = rowTemplate.replace("__objectId__", "attach_sign_" + data[i].id);
-                //     rowStr = rowStr.replace("__object__", data[i].name);
-                //     rowStr = rowStr.replace("__status__", "&nbsp;");
-                //
-                //     tableObj.append(rowStr);
-                //
-                //
-                //     rows = AJS.$("div#signDetailDiv ul li");
-                //     AJS.$(rows[rows.size() - 1]).find(".sign-bthcheck button").bind("click", function() {
-                //         getSignForObject(this);
-                //     });
-                //}
-                //
             },
             error: function(data) {
-                // var myFlag = AJS.flag({
-                //     type: 'error',
-                //     body: 'Ошибка загрузки',
-                // });
 
             },
+            complete: function() {
+                AJS.$("div#" + objId).parent().find(".sign-spin").css("display", "none");
+                lockEvents = false;
+
+                // если запущена пакетная обработка то надо вызвать функцию еще раз по списку объектов
+                if (packetProcess) {
+                    // начинаем пакетную обработку
+                    if (packetObjects.length > 0) {
+                        getSignForObject(packetObjects.pop());
+                    } else {
+
+                        // проверить состав вложений напоследок
+                        checkAttachments();
+
+                        // сбросить флаг пакетной обработки
+                        packetProcess = false;
+                    }
+
+                }
+            },
         });
-
-
-
-
-
-        // // console.log("objname: " + objname + " issueId: " +  issueId + " attachmentid: " + attachmentid);
-        // console.log(" event log ");
-        // console.log(obj);
-        // console.log(objId);
-        // console.log(AJS.$(obj).parent().parent().find("div.sign-name"));
-
-        // console.log(" ======================== ");
-        // for (var i = 0; i < arguments.length; i++) {
-        //     console.log( "Привет, " + arguments[i] );
-        // }
 
     }
 
@@ -209,7 +203,8 @@ simplesign.module = (function () {
             type: 'get',
             dataType: 'json',
             // data: JSON.stringify(jsonObj),
-            async: true,
+            async: false,
+            // async: true,
             contentType: "application/json; charset=utf-8",
             success: function(data) {
 
@@ -246,34 +241,119 @@ simplesign.module = (function () {
         });
 
 
-
-        //
-        //
-        // // вложения
-        // rowStr = rowTemplate.replace("__objectId__", "aatach_121212");
-        // rowStr = rowStr.replace("__object__", "Вложение вложение вложение вложение вложение вложение ");
-        // rowStr = rowStr.replace("__status__", "&nbsp;");
-        //
-        // tableObj.append(rowStr);
-        //
-        //
-        // rowStr = rowTemplate.replace("__objectId__", "aatach_232323");
-        // rowStr = rowStr.replace("__object__", "Вложение вложение вложение вложение вложение вложение ");
-        // rowStr = rowStr.replace("__status__", "&nbsp;");
-        //
-        // tableObj.append(rowStr);
-        //
-        //
-        // rowStr = rowTemplate.replace("__objectId__", "aatach_343434");
-        // rowStr = rowStr.replace("__object__", "Вложение вложение вложение вложение вложение вложение ");
-        // rowStr = rowStr.replace("__status__", "&nbsp;");
-        //
-        // tableObj.append(rowStr);
-        //
-
         return true;
 
     }
+
+
+    ////////////////////////////////////////
+    // проверка всех компонентов подписи
+    ////////////////////////////////////////
+    var checkAll = function() {
+
+        // очистим массив
+        packetObjects = [];
+        // установим флаг пакетной обработки - флаг нужно будет сбросить в конце обработки в функции
+        packetProcess = true;
+
+
+        // кнопки для передачи в функцию
+        var buttons = AJS.$("div#signDetailDiv ul li div.sign-bthcheck button");
+
+        // заполняем массив
+        for (var i = buttons.size() - 1; i > 0; i--) {
+            packetObjects.push(buttons[i]);
+        }
+
+        // начинаем пакетную обработку
+        if (packetObjects.length > 0) {
+            getSignForObject(packetObjects.pop());
+        }
+
+    }
+
+    ////////////////////////////////////////
+    // проверка того является ли список вложений неизмененным
+    ////////////////////////////////////////
+    var checkAttachments = function() {
+
+        var messages = []; // сообщения об ошибках
+
+        ////////////////////////////////////////
+        // 1 - получить список имен вложений из нашей таблицы
+        var attachsSigned = [];
+
+        var divs = AJS.$("div#signDetailDiv ul li div.sign-name");
+
+        for (var i = 3; i < divs.size(); i++) {
+            attachsSigned.push(divs[i].innerText);
+        }
+
+        // console.log(attachsSigned);
+
+        ////////////////////////////////////////
+        // 2 - получить список имен вложений из задачи
+        var attachsIssue = [];
+
+        var responseObj = AJS.$.ajax({
+            url: AJS.params.baseURL + "/rest/api/2/issue/" + AJS.$("input#signissueid").val(),
+            type: 'get',
+            dataType: 'json',
+            async: false,
+        });
+
+        if (responseObj.statusText == "success") {
+            var jsonObj = JSON.parse(responseObj.responseText);
+
+            var attachsArr = jsonObj.fields.attachment;
+            var attachsArrLength = jsonObj.fields.attachment.length;
+
+            for (var i = 0; i < attachsArrLength; i++) {
+                // arrElem = {};
+                // arrElem.id = attachsArr[i].id;
+                // arrElem.filename = attachsArr[i].filename;
+                // arrElem.size = attachsArr[i].size;
+                //
+                // attachs.push(arrElem);
+                attachsIssue.push(attachsArr[i].filename);
+            }
+        }
+
+        // console.log(attachsIssue);
+
+        // 3 - проверить что вложения из подписи есть в задаче
+        for (var i = 0; i < attachsSigned.length; i++) {
+            if (attachsIssue.indexOf(attachsSigned[i]) < 0) {
+                messages.push("вложение подписи не найдено во вложениях задачи " + attachsSigned[i].substring(0, 10));
+            }
+        }
+
+        // 4 - проверить что вложения из задачи есть в подписи
+        for (var i = 0; i < attachsIssue.length; i++) {
+            if (attachsSigned.indexOf(attachsIssue[i]) < 0) {
+                messages.push("вложение задачи не найдено во вложениях подписи " + attachsIssue[i].substring(0, 10));
+            }
+        }
+
+        // 5 - проверить количество элементов в массивах
+        if (attachsIssue.length != attachsSigned.length) {
+            messages.push("вложения в подписи и в задаче различны");
+        }
+
+
+        // 6 - сформировать сообщения об итогах проверки
+        var msg = "";
+
+        for (var i = 0; i < messages.length; i++) {
+            msg = msg + messages[i] + "\n";
+        }
+
+        // console.log(msg);
+
+        AJS.$("div#signDetailDiv div.sign-total").text(msg);
+    }
+
+
 
 
     ////////////////////////////////////////
@@ -325,7 +405,9 @@ simplesign.module = (function () {
     }
 
     return {
-        checkSumClick:checkSumClick
+        checkSumClick:checkSumClick,
+        checkAll:checkAll,
+        // checkAttachments:checkAttachments,
         // callServerRest:callServerRest
     };
 
