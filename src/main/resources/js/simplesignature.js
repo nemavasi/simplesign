@@ -324,14 +324,16 @@ simplesign.module = (function () {
         // 3 - проверить что вложения из подписи есть в задаче
         for (var i = 0; i < attachsSigned.length; i++) {
             if (attachsIssue.indexOf(attachsSigned[i]) < 0) {
-                messages.push("вложение подписи не найдено во вложениях задачи " + attachsSigned[i].substring(0, 10));
+                // messages.push("вложение подписи не найдено во вложениях задачи " + attachsSigned[i].substring(0, 10));
+                messages.push("<span style=\"font-weight: bold\">" + attachsSigned[i] + "</span>  - вложение подписи не найдено во вложениях задачи");
             }
         }
 
         // 4 - проверить что вложения из задачи есть в подписи
         for (var i = 0; i < attachsIssue.length; i++) {
             if (attachsSigned.indexOf(attachsIssue[i]) < 0) {
-                messages.push("вложение задачи не найдено во вложениях подписи " + attachsIssue[i].substring(0, 10));
+                // messages.push("вложение задачи не найдено во вложениях подписи " + attachsIssue[i].substring(0, 10));
+                messages.push("<span style=\"font-weight: bold\">" + attachsIssue[i] + "</span>  -вложение задачи не найдено во вложениях подписи ");
             }
         }
 
@@ -345,12 +347,14 @@ simplesign.module = (function () {
         var msg = "";
 
         for (var i = 0; i < messages.length; i++) {
-            msg = msg + messages[i] + "\n";
+            // msg = msg + messages[i] + "\n";
+            msg = msg + messages[i] + "<br />";
         }
 
         // console.log(msg);
 
-        AJS.$("div#signDetailDiv div.sign-total").text(msg);
+        // AJS.$("div#signDetailDiv div.sign-total").text(msg);
+        AJS.$("div#signDetailDiv div.sign-total").html(msg);
     }
 
 

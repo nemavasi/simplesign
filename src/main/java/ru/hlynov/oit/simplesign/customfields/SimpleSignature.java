@@ -148,6 +148,14 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
 
         if (relevantParams == null) {
             return null;
+            // тек дата в формате
+//            DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+//            Date date = new Date();
+//            Carrier carrier = new Carrier("", dateFormat.format(date), "");
+//
+//            return carrier;
+
+
         }
 
 //        Collection values = relevantParams.getAllValues();
@@ -246,7 +254,7 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
         Collection<String> usernameCl = relevantParams.getValuesForNullKey();
         Collection<String> passwordCl = relevantParams.getValuesForKey("1");
 
-        log.warn("relevantParams from validateFromParams: " + relevantParams.toString());
+//        log.warn("relevantParams from validateFromParams: " + relevantParams.toString());
 
 
 //        com.atlassian.jira.internal.issue_id=[10000]
@@ -323,23 +331,34 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
             return map;
         }
 
-        log.warn("============= getVelocityParameters =============");
-        log.warn("issue: " + issue.toString());
-        log.warn("field: " + field.toString());
-        log.warn("fieldLayoutItem: " + fieldLayoutItem.toString());
-
-        log.warn("field value: " + ((Carrier)(field.getValue(issue))).getSigndate());
+//        log.warn("============= getVelocityParameters =============");
+//        log.warn("issue: " + issue.toString());
+//        log.warn("field: " + field.toString());
+//        log.warn("fieldLayoutItem: " + fieldLayoutItem.toString());
+//
+//        log.warn("field value: " + ((Carrier)(field.getValue(issue))).getSigndate());
 
         FieldConfig fieldConfig = field.getRelevantConfig(issue);
         //add what you need to the map here
 
-        String username = ((Carrier)(field.getValue(issue))).getUsername();
+        Object fieldValue = field.getValue(issue);
+        if (fieldValue == null) {
+            map.put("username", "");
+            map.put("fullusername", "");
+            map.put("signdate", "");
+        } else {
 
-        ApplicationUser user = ComponentAccessor.getUserManager().getUserByName(username);
+            Carrier carrier = (Carrier)fieldValue;
 
-        map.put("username", username);
-        map.put("fullusername", user.getDisplayName());
-        map.put("signdate", ((Carrier)(field.getValue(issue))).getSigndate());
+            String username = carrier.getUsername();
+
+            ApplicationUser user = ComponentAccessor.getUserManager().getUserByName(username);
+
+            map.put("username", username);
+            map.put("fullusername", user.getDisplayName());
+            map.put("signdate", carrier.getSigndate());
+        }
+
 
 
 

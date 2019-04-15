@@ -12,7 +12,8 @@
         border: 1px solid #c1c7d0;
         box-shadow: 3px 3px 3px 1px #000000;
         padding: 10px;
-        z-index: 100;
+        /*z-index: 100;*/
+        z-index: 90;
     }
 
     div#signDetailDiv ul {
@@ -61,8 +62,9 @@
     }
 
     .sign-total {
+        padding-left: 10px;
         clear: both;
-        text-align: center;
+        text-align: left;
         margin-top: 10px;
         color: #FF0000;
     }
@@ -87,7 +89,7 @@
         <div id="signDetailDiv">
             <ul>
                 <li style="background-color: #e1e4e9; color: #42526e">
-                    <div style="background-color: #e1e4e9; color: #42526e" class="sign-name">Компоненты подписи</div>
+                    <div style="background-color: #e1e4e9; color: #42526e; font-weight: bold" class="sign-name">Компоненты подписи</div>
                     <div style="background-color: #e1e4e9; color: #42526e" class="sign-status">&nbsp;</div>
                     <div style="background-color: #e1e4e9; color: #42526e" class="sign-bthcheck">
                         <button style="background-color: #e1e4e9;" onclick="simplesign.module.checkAll()">проверить все</button>

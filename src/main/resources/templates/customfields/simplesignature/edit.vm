@@ -2,7 +2,7 @@
 #controlHeader ($action $customField.id $customField.name $fieldLayoutItem.required $displayParameters.noHeader)
 
 
-#set ($carrier = $customField.getValue($issue))
+## #set ($carrier = $customField.getValue($issue))
 
 ##<input class="text" id="${customField.id}" name="${customField.id}" type="text" value="$!username" placeholder="Имя пользователя">
 ##
@@ -10,7 +10,7 @@
 
 <input class="text" id="${customField.id}" name="${customField.id}" type="text" value="" placeholder="Имя пользователя">
 
-<input class="text" id="password" type="password" name="${customField.id}:1" placeholder="Пароль">
+<input class="text" id="password" type="password" name="${customField.id}:1">
 
 
 
