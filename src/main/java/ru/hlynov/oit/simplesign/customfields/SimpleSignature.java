@@ -343,7 +343,7 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
 
         Object fieldValue = field.getValue(issue);
         if (fieldValue == null) {
-            map.put("username", "");
+//            map.put("username", "");
             map.put("fullusername", "");
             map.put("signdate", "");
         } else {
@@ -354,15 +354,15 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
 
             ApplicationUser user = ComponentAccessor.getUserManager().getUserByName(username);
 
-            map.put("username", username);
+//            map.put("username", username);
             map.put("fullusername", user.getDisplayName());
             map.put("signdate", carrier.getSigndate());
         }
 
 
 
+        map.put("username", jiraAuthenticationContext.getLoggedInUser().getName());
 
-        //        map.put("username", jiraAuthenticationContext.getLoggedInUser().getName());
         map.put("baseurl", ComponentAccessor.getApplicationProperties().getString("jira.baseurl"));
 
         map.put("issueid", issue.getId());

@@ -8,7 +8,7 @@
 ##
 ##<input class="text" id="password" type="text" name="${customField.id}:1" placeholder="Пароль">
 
-<input class="text" id="${customField.id}" name="${customField.id}" type="text" value="" placeholder="Имя пользователя">
+<input class="text" id="${customField.id}" name="${customField.id}" type="text" value="" placeholder="$username">
 
 <input class="text" id="password" type="password" name="${customField.id}:1">
 

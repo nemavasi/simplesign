@@ -72,6 +72,20 @@
     .sign-spin {
         float: left;
     }
+
+    .close-btn {
+        position: absolute;
+        height: 23px;
+        width: 23px;
+        top: 6px;
+        left: 400px;
+        cursor: pointer;
+        font-weight: bold;
+        color: #FF0000;
+    }
+
+
+
 </style>
 
 <div id="simpleSignDiv">
@@ -87,6 +101,7 @@
     </div>
 
         <div id="signDetailDiv">
+            <div class="close-btn"><button style="color: #FF0000;" onclick="simplesign.module.checkSumClick()">x</button></div>
             <ul>
                 <li style="background-color: #e1e4e9; color: #42526e">
                     <div style="background-color: #e1e4e9; color: #42526e; font-weight: bold" class="sign-name">Компоненты подписи</div>
