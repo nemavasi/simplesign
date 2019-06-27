@@ -56,10 +56,6 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
     private GenericConfigManager genericConfigManager;
     private IssueManager issueManager;
 
-    // internal vars
-    private String issueId;      //todo !!! многопоточно работает код или нет - потенциальный баг? скоуп экземпляра равен сессии или это синглтон? !!! или для каждого случая свой экземпляр объекта ???
-    private String projectId;
-
     // The type of data in the database, one entry per value in this field
     private static final PersistenceFieldType DB_TYPE = PersistenceFieldType.TYPE_UNLIMITED_TEXT;
 
@@ -100,7 +96,7 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
             return null;
         }
         String[] parts = s.split(DB_SEP);
-        if (parts.length != 3) {
+        if (parts.length != 4) {
             log.warn("Invalid database value is ignored: " + s);
             // If this should not be allowed, then throw a
             // FieldValidationException instead
@@ -109,12 +105,14 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
         String username = "no_user";   //todo это зачем ведь все потом перетирается?
         String signdate = "01.01.0001 00:00:00";
         String hashcalc = "np_sign";
-        if (parts.length == 3) {          //todo зачем еще одна проверка?
+        String signissueid  = "no";
+        if (parts.length == 4) {          //todo зачем еще одна проверка?
             username = parts[0];
             signdate = parts[1];
             hashcalc = parts[2];
+            signissueid = parts[3];
         }
-        return new Carrier(username, signdate, hashcalc);
+        return new Carrier(username, signdate, hashcalc, signissueid);
     }
 
 
@@ -145,6 +143,8 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
 
     @Override
     public Carrier getValueFromCustomFieldParams(CustomFieldParams relevantParams) throws FieldValidationException {
+
+        relevantParams.getAllKeys().forEach(k -> relevantParams.getValuesForKey(k).forEach(v -> log.warn("qqq getValueFromCustomFieldParams " + k + " " + v)));
 
         if (relevantParams == null) {
             return null;
@@ -184,40 +184,40 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
 
             Collection<String> usernameCl = relevantParams.getValuesForNullKey();
             Collection<String> passwordCl = relevantParams.getValuesForKey("1");
+            Collection<String> issueCl = relevantParams.getValuesForKey("2");
 
             Collection<String> issueIds = relevantParams.getValuesForKey("com.atlassian.jira.internal.issue_id");
 
-            if ((usernameCl == null) || (passwordCl == null)) {
+            if ((usernameCl == null) || (passwordCl == null) || (issueCl == null)) {
                 return null;
             }
 
             String username = null;
             String password = null;
+            String issueId = null;
 
             Iterator<String> iter = usernameCl.iterator();
-
             if (iter.hasNext()) {
                 username = iter.next();
             }
 
             iter = passwordCl.iterator();
-
             if (iter.hasNext()) {
                 password = iter.next();
             }
 
-            if ((username == null) || (password == null)) {
-                return null;
+            iter = issueCl.iterator();
+            if (iter.hasNext()) {
+                issueId = iter.next();
             }
 
-
-            if (this.issueId == null) {
+            if ((username == null) || (password == null) || (issueId == null)) {
                 return null;
             }
 
 //            log.warn("issueId: " + issueId);
 
-            Long issueIdLong = Long.valueOf(Long.parseLong(this.issueId));  //todo - что это за двойной боксинг?
+            Long issueIdLong = Long.valueOf(Long.parseLong(issueId));  //todo - что это за двойной боксинг?
             Issue issue = this.issueManager.getIssueObject(issueIdLong);
 
             String issueSummaryHash = SignCalculator.getStringCheckusm(issue.getSummary());
@@ -237,7 +237,7 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
             DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
             Date date = new Date();
 
-            Carrier carrier = new Carrier(username, dateFormat.format(date), jsonStr);
+            Carrier carrier = new Carrier(username, dateFormat.format(date), jsonStr, issueId);
 
             return carrier;
         }
@@ -250,24 +250,11 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
     public void validateFromParams(CustomFieldParams relevantParams, ErrorCollection errorCollectionToAddTo, FieldConfig config) {
 //        super.validateFromParams(relevantParams, errorCollectionToAddTo, config);
 
-
+        relevantParams.getAllKeys().forEach(k -> relevantParams.getValuesForKey(k).forEach(v -> log.warn("qqq validateFromParams " + k + " " + v)));
         Collection<String> usernameCl = relevantParams.getValuesForNullKey();
         Collection<String> passwordCl = relevantParams.getValuesForKey("1");
 
 //        log.warn("relevantParams from validateFromParams: " + relevantParams.toString());
-
-
-//        com.atlassian.jira.internal.issue_id=[10000]
-//        com.atlassian.jira.internal.requireProjectIds=[true]
-//        com.atlassian.jira.internal.project_id=[10000]
-
-        // получим id задачи
-        Collection<String> issueIds = relevantParams.getValuesForKey("com.atlassian.jira.internal.issue_id");
-        this.issueId = issueIds != null ? (String)issueIds.iterator().next() : null;
-
-        // получим id проекта
-        Collection<String> projectIds = relevantParams.getValuesForKey("com.atlassian.jira.internal.project_id");
-        this.projectId = projectIds != null ? (String)projectIds.iterator().next() : null;
 
 
         if ((usernameCl == null) || (passwordCl == null)) {

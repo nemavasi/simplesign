@@ -9,6 +9,12 @@ public class Carrier {
     private String signdate;
     private String hashcalc;
 
+    public static Logger getLog() {
+        return log;
+    }
+
+    private String issueId;
+
     private static final Logger log = LoggerFactory.getLogger(Carrier.class);
 
 //    public Carrier() {
@@ -16,10 +22,11 @@ public class Carrier {
 //    }
 
 
-    public Carrier(String username, String signdate, String hashcalc) {
+    public Carrier(String username, String signdate, String hashcalc, String issueId) {
         this.username = username;
         this.signdate = signdate;
         this.hashcalc = hashcalc;
+        this.issueId = issueId;
 
 //        log.warn(" ======== constr 2");
 //
@@ -61,8 +68,16 @@ public class Carrier {
         this.hashcalc = hashcalc;
     }
 
+    public String getIssueId() {
+        return issueId;
+    }
+
+    public void setIssueId(String issueId) {
+        this.issueId = issueId;
+    }
+
     @Override
     public String toString() {
-        return username + "###" + signdate + "###" + hashcalc;
+        return username + "###" + signdate + "###" + hashcalc+ "###" + issueId;
     }
 }

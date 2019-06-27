@@ -12,7 +12,7 @@
 
 <input class="text" id="password" type="password" name="${customField.id}:1">
 
-
+<input class="text" id="signissueid" type="hidden" name="${customField.id}:2" value = "$issueid">
 
 ##<div class="description">$sometext</div>
 ##<div class="description">$value</div>
