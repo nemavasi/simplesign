@@ -50,14 +50,14 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
     private static final Logger log = LoggerFactory.getLogger(SimpleSignature.class);
 
     private JiraAuthenticationContext jiraAuthenticationContext;
-//    private CustomFieldManager customFieldManager;
+    //    private CustomFieldManager customFieldManager;
     private UserManager userManager;
     private CustomFieldValuePersister customFieldValuePersister;
     private GenericConfigManager genericConfigManager;
     private IssueManager issueManager;
 
     // internal vars
-    private String issueId;
+    private String issueId;      //todo !!! многопоточно работает код или нет - потенциальный баг? скоуп экземпляра равен сессии или это синглтон? !!! или для каждого случая свой экземпляр объекта ???
     private String projectId;
 
     // The type of data in the database, one entry per value in this field
@@ -106,10 +106,10 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
             // FieldValidationException instead
             return null;
         }
-        String username = "no_user";
+        String username = "no_user";   //todo это зачем ведь все потом перетирается?
         String signdate = "01.01.0001 00:00:00";
         String hashcalc = "np_sign";
-        if (parts.length == 3) {
+        if (parts.length == 3) {          //todo зачем еще одна проверка?
             username = parts[0];
             signdate = parts[1];
             hashcalc = parts[2];
@@ -217,7 +217,7 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
 
 //            log.warn("issueId: " + issueId);
 
-            Long issueIdLong = Long.valueOf(Long.parseLong(this.issueId));
+            Long issueIdLong = Long.valueOf(Long.parseLong(this.issueId));  //todo - что это за двойной боксинг?
             Issue issue = this.issueManager.getIssueObject(issueIdLong);
 
             String issueSummaryHash = SignCalculator.getStringCheckusm(issue.getSummary());
@@ -338,7 +338,7 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
 //
 //        log.warn("field value: " + ((Carrier)(field.getValue(issue))).getSigndate());
 
-        FieldConfig fieldConfig = field.getRelevantConfig(issue);
+        FieldConfig fieldConfig = field.getRelevantConfig(issue);  //todo не используется нигде?
         //add what you need to the map here
 
         Object fieldValue = field.getValue(issue);
@@ -348,7 +348,7 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
             map.put("signdate", "");
         } else {
 
-            Carrier carrier = (Carrier)fieldValue;
+            Carrier carrier = (Carrier)fieldValue; //todo а если что левое полетит?
 
             String username = carrier.getUsername();
 
@@ -369,7 +369,7 @@ public class SimpleSignature extends AbstractSingleFieldType<Carrier> {
         map.put("fieldid", field.getId());
 
 
-        map.put("sometext", "cool");
+        map.put("sometext", "cool"); //todo ?
 
         return map;
     }
